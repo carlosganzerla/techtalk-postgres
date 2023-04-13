@@ -19,8 +19,10 @@ FROM
     generate_series(1,1000000) id
 ORDER BY
     random();
-	
+    
 CREATE INDEX ON test(name);
+
+ANALYZE test;
 
 -- Sequential scan and index scan
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id = 50000;
@@ -30,15 +32,17 @@ ALTER TABLE test
     ADD CONSTRAINT test_id_pkey PRIMARY KEY (id);
 
 -- Assessing correlation
+ANALYZE test;
+
 SELECT
-	attname,
-	correlation
+    attname,
+    correlation
 FROM
-	pg_stats 
+    pg_stats 
 WHERE 
-	tablename = 'test'
+    tablename = 'test'
 ORDER BY
-	abs(correlation) DESC;
+    abs(correlation) DESC;
 
 -- Larger Index scan, high correlation
 SET enable_seqscan = off;
@@ -54,11 +58,11 @@ EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE name <= 'm';
 
 -- Bitmap scan
 SET enable_bitmapscan = on;
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 2000 
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 
 
 -- Bitmap scan operations
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 2000 AND name = 'b';
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 2000 OR name = 'b';
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 AND name = 'b';
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 OR name = 'b';
 
--- Index only scans and covering indexes
+-- Index only scans 
 EXPLAIN (COSTS OFF, ANALYZE)  SELECT id FROM test WHERE id = 50000;
