@@ -58,7 +58,7 @@ EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE name <= 'm';
 
 -- Bitmap scan
 SET enable_bitmapscan = on;
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200;
 
 -- Bitmap scan operations
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 AND name = 'b';

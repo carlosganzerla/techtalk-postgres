@@ -32,8 +32,8 @@ CREATE INDEX ON test (alive);
 
 ANALYZE test;
 
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE alive
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE NOT alive
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE alive;
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE NOT alive;
 
 -- -- Index size
 SELECT relpages FROM pg_class WHERE relname='test_alive_idx';
@@ -44,12 +44,12 @@ CREATE INDEX ON test (alive) WHERE alive;
 
 ANALYZE test;
 
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE alive
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE alive;
 
 SELECT relpages FROM pg_class WHERE relname='test_alive_idx';
 
 -- Expression indexes
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT * FROM test WHERE id % ascii(name) = 0
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT * FROM test WHERE id % ascii(name) = 0;
 
 CREATE INDEX test_expr_idx ON test ((id % ascii(name)));
 
@@ -69,9 +69,13 @@ ANALYZE test;
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) 
 SELECT * FROM test WHERE alive ORDER BY id % ascii(name);
 
--- -- Triggering using sort and limit
+-- -- Using sort and limit
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) 
 SELECT * FROM test WHERE alive ORDER BY id % ascii(name) LIMIT 100;
+
+-- Backward index scan
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) 
+SELECT * FROM test WHERE alive ORDER BY id % ascii(name) DESC LIMIT 100;
 
 -- -- Using sorting and limit to fetch a single value
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) 
