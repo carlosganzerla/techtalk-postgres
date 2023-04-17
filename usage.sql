@@ -1,6 +1,6 @@
 -- Unique indexes and foreign keys
 
--- -- Foreign keys vs unique constraints
+-- -- Foreign keys won't work without unique constraints
 ALTER TABLE test
     ADD COLUMN child_name text REFERENCES test (name);
 
@@ -13,9 +13,12 @@ SELECT * FROM test LIMIT 2;
 
 ANALYZE test;
 
+-- -- UNIQUE index is a normal index
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT * FROM test WHERE child_id = 4;
+
 -- Dealing with nulls
 UPDATE
-    name
+    test
 SET
     name = null
 WHERE
@@ -24,8 +27,7 @@ WHERE
 ANALYZE test;
 
 -- -- Showing that B-Tree indexes nulls
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE name IS NULL;
-
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT * FROM test WHERE name IS NULL;
 
 -- Partial index
 CREATE INDEX ON test (alive);
@@ -65,11 +67,11 @@ DROP INDEX test_name_idx;
 
 ANALYZE test;
 
--- -- Combining and not using for sorting
+-- -- Combining and not using index for sorting
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) 
 SELECT * FROM test WHERE alive ORDER BY id % ascii(name);
 
--- -- Using sort and limit
+-- -- Using sort and limit and leveragin index usage
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) 
 SELECT * FROM test WHERE alive ORDER BY id % ascii(name) LIMIT 100;
 
@@ -90,19 +92,31 @@ EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)
 SELECT * FROM test ORDER BY name, id, alive LIMIT 1;
 
 -- Multi-column indexes
+ALTER TABLE test
+	DROP COLUMN child_id,
+    DROP CONSTRAINT test_id_pkey;
+
 CREATE INDEX ON test (id, name);
 
 ANALYZE test;
 
+-- -- Column Order matters
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id = 200
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE name = 'b';
+
 -- -- Uses index scan instead of bitmap scan
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 AND name = 'b';
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 20000 AND name = 'b';
 -- -- Does not work with OR
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 200 OR name = 'b';
--- -- Using union to trigger index
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)
-SELECT * FROM test WHERE id <= 200
-UNION
-SELECT * FROM test WHERE name = 'b';
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 20000 OR name = 'b';
+
+DROP INDEX test_id_name_idx;
+
+CREATE INDEX ON test (name);
+
+ALTER TABLE test
+    ADD PRIMARY KEY (id);
+	
+ANALYZE test;
 
 -- Using INCLUDE to create covering indexes
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT id, name, alive FROM test WHERE id = 200
@@ -113,12 +127,16 @@ ANALYZE test;
 
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT id, name, alive FROM test WHERE id = 200
 
--- -- Doesn't work with wildcard
+-- -- Works also with wildcard
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT * FROM test WHERE id = 200
 
--- -- Include can also be used on searches
+-- -- Include can also be used on searches by included keys
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)
 SELECT id, name, alive FROM test WHERE id IN (200, 300, 400) AND name = 'B';
+
+-- -- Works only if index key is queried
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)
+SELECT id, name, alive FROM test WHERE name = 'B';
 
 -- EXCLUDE constraints example
 ALTER TABLE test
