@@ -1,3 +1,9 @@
+-- Access methods
+SELECT
+    *
+FROM 
+    pg_am;
+
 -- Classes, access method and families from an access method
 SELECT
     am.amname access_method,
@@ -34,7 +40,7 @@ FROM
     pg_am a,
     unnest(array['can_order','can_unique','can_multi_col','can_exclude', 'can_include']) p(name)
 WHERE
-    a.amname = 'gist'
+    a.amname = 'brin'
 ORDER BY a.amname;
 
 -- Index level properties

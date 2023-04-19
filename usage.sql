@@ -60,7 +60,7 @@ ANALYZE test;
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS) SELECT * FROM test WHERE id % ascii(name) = 0
  
 -- -- Wont work because it's not IMMUTABLE
-CREATE INDEX test_expr_2_idx ON test ((id %  EXTRACT(DAY FROM CURRENT_DATE)::integer));
+CREATE INDEX test_expr_2_idx ON test ((id % EXTRACT(DAY FROM CURRENT_DATE)::integer));
 
 -- Sorting
 DROP INDEX test_name_idx;
@@ -104,10 +104,10 @@ ANALYZE test;
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id = 200
 EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE name = 'b';
 
--- -- Uses index scan instead of bitmap scan
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 20000 AND name = 'b';
+-- -- Uses index scan
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id = 20000 AND name = 'b';
 -- -- Does not work with OR
-EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id <= 20000 OR name = 'b';
+EXPLAIN (COSTS OFF, ANALYZE, BUFFERS)  SELECT * FROM test WHERE id = 20000 OR name = 'b';
 
 DROP INDEX test_id_name_idx;
 
